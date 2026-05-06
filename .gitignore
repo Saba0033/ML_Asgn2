@@ -1,0 +1,46 @@
+# Data
+data/*.csv
+data/*.zip
+data/*.parquet
+!data/.gitkeep
+
+# Submissions (kept locally, large)
+submissions/*.csv
+!submissions/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# MLflow / DagsHub local cache
+mlruns/
+mlartifacts/
+.mlflow/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pem
+kaggle.json
