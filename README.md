@@ -178,9 +178,10 @@ selection_score = val_roc_auc - 0.5 * max(0, overfit_gap - 0.02)
 | 1 | **XGBoost** | **0.9354** | 0.0040 | 0.0513 | well-fit (champion) |
 | 2 | Gradient Boosting (HistGB) | 0.9237 | 0.0046 | 0.0445 | well-fit |
 | 3 | Random Forest | 0.8959 | 0.0044 | 0.0572 | სუსტი overfit |
-| 4 | Decision Tree | 0.7663 | 0.0032 | -0.0023 | well-fit baseline |
+| 4 | Logistic Regression (L2) | 0.8700 | 0.0021 | 0.0020 | well-fit (clean linear baseline) |
+| 5 | Decision Tree | 0.7663 | 0.0032 | -0.0023 | well-fit baseline |
 
-შენიშვნა: LogReg L1, LogReg L2 და AdaBoost notebook-ები იმავე სტრუქტურით აშენებულია და MLflow-ზე ცალკე ექსპერიმენტებშია, თითოეულის HP grid-ი იგივე under/well/overfit ლოგიკას მიყვება. შედეგები DagsHub MLflow UI-ში ხილულია (იხ. ბმული ქვემოთ).
+შენიშვნა: LogReg L1 და AdaBoost notebook-ები იმავე სტრუქტურით აშენებულია და MLflow-ზე ცალკე ექსპერიმენტებშია, თითოეულის HP grid-ი იგივე under/well/overfit ლოგიკას მიყვება. შედეგები DagsHub MLflow UI-ში ხილულია (იხ. ბმული ქვემოთ).
 
 ### თითოეული არქიტექტურის საუკეთესო კონფიგურაცია
 
@@ -189,9 +190,10 @@ selection_score = val_roc_auc - 0.5 * max(0, overfit_gap - 0.02)
 | XGBoost | `n=800, lr=0.03, d=10, ss=0.7, cs=0.6` | 0.0 | correlation | 290 |
 | Gradient Boosting | `lr=0.05, max_iter=500, max_depth=8` | 0.0 | correlation | 290 |
 | Random Forest | `n=200, max_depth=None, min_samples_leaf=20` | 0.0 | correlation | 290 |
+| Logistic Regression (L2) | `C=0.1` | median+missing | variance | 764 |
 | Decision Tree | `max_depth=6` | 0.0 | correlation | 290 |
 
-ოთხივე tree-based notebook აირჩია `numeric_fill=0` და `CorrelationPruner` (V-block-ის redundancy-ის გამო).
+ოთხივე tree-based notebook აირჩია `numeric_fill=0` და `CorrelationPruner` (V-block-ის redundancy-ის გამო). LogReg-ი — როგორც ლინეარული მოდელი — იყენებს `median impute + StandardScaler + OneHotEncoder`-ს (`max_categories=20`) და `VarianceThreshold` selector-ს, რის შედეგადაც ფიჩერების რაოდენობა (764) უფრო მაღალია (OHE სვეტები იშლება).
 
 ### Hyperparameter ოპტიმიზაცია — under/well/over-fit ცხრილები
 
@@ -243,9 +245,21 @@ selection_score = val_roc_auc - 0.5 * max(0, overfit_gap - 0.02)
 
 DT-ის შემთხვევაში selection_score-მა სწორად დახარჯა `min_samples_leaf=50` row-ი (val AUC 0.84 მაგრამ gap 0.12) და აირჩია უფრო ჯანმრთელი `max_depth=6` (val AUC 0.80, gap ~0).
 
-**LogReg L1 / L2** (`LogisticRegression_L1_Training` / `_L2_Training`):
+**Logistic Regression L2** (`LogisticRegression_L2_Training`):
 
-ცვლადი მხოლოდ `C` ∈ {0.001, 0.01, 0.1, 1.0, 10.0} — შესაბამისი 5 run თითოეულ ექსპერიმენტში. დაბალი `C` heavy regularisation = underfit, მაღალი `C` = სუსტი regularisation, შესაძლო overfit. ანალოგიური structure DagsHub-ის `LogisticRegression_L*_Training` ექსპერიმენტში ხილულია.
+| C | train AUC | val AUC | gap | რეჟიმი |
+|---|---|---|---|---|
+| 0.001 | 0.8561 | 0.8637 | -0.0076 | underfit (heavy regularisation) |
+| 0.010 | 0.8745 | 0.8777 | -0.0032 | well-fit |
+| **0.100** | **0.8835** | **0.8815** | **+0.0020** | **CHOSEN (cleanest gap)** |
+| 1.000 | 0.8863 | 0.8811 | +0.0052 | well-fit |
+| 10.000 | 0.8869 | 0.8804 | +0.0065 | well-fit (regularisation თითქმის უფასოა) |
+
+LogReg-ის HP grid სწორად აჩვენებს რომ ძალიან დაბალი `C` (0.001) underfit-ის რეჟიმშია (val AUC 0.86 და უარყოფითი gap), ხოლო `C ≥ 1.0` უკვე იწყებს overfit-ში გადახრას (gap +0.005…+0.007). საუკეთესო წერტილი არის `C=0.1` სადაც gap თითქმის 0 და val AUC მაქსიმალურია.
+
+**LogReg L1** (`LogisticRegression_L1_Training`):
+
+ცვლადი იგივე `C` ∈ {0.001, 0.01, 0.1, 1.0, 10.0}, განსხვავება მხოლოდ `penalty='l1'`-ში. სტრუქტურა იდენტურია L2-ისა და DagsHub-ის შესაბამის ექსპერიმენტში ხილულია.
 
 **AdaBoost** (`AdaBoost_Training`):
 
@@ -381,8 +395,8 @@ kaggle competitions submit -c ieee-fraud-detection -f submissions/submission.csv
 
 ## !! შენიშვნა სექციის ლიდერისთვის
 
-**მხოლოდ 4 არქიტექტურამ მოასწრო სრული პაიპლაინი ამ ვერსიაში** (XGBoost, Gradient Boosting, Random Forest, Decision Tree), და დროის სიმცირის გამო (Kaggle-ის kernel-ები ხანგრძლივად გადიოდა — ცალკეული LogReg-ი/AdaBoost run 30+ წუთს იჭერდა cleaning-სა და hyperparameter tuning-ში) ვერ ვაცდი ვადას რომ ყველა 7 არქიტექტურა ერთ submission-ში მოხვედრილიყო.
+**მხოლოდ 5 არქიტექტურამ მოასწრო სრული პაიპლაინი ამ ვერსიაში** (XGBoost, Gradient Boosting, Random Forest, Logistic Regression L2, Decision Tree), და დროის სიმცირის გამო (Kaggle-ის kernel-ები ხანგრძლივად გადიოდა — ცალკეული LogReg L1 / AdaBoost run 30+ წუთს იჭერდა cleaning-სა და hyperparameter tuning-ში) ვერ ვაცდი ვადას რომ ყველა 7 არქიტექტურა ერთ submission-ში მოხვედრილიყო.
 
-ამ ვერსიაში მხოლოდ ამ **4 არქიტექტურას ვიხილავ** README-სა და leaderboard-ში. **კიდევ ერთ სრულ ვერსიას ავტვირთავ** დარჩენილი 3 მოდელით (LogReg L1, LogReg L2, AdaBoost), მაგრამ უკვე **12-ს ცოტათი გადასცდება**.
+ამ ვერსიაში ამ **5 არქიტექტურას ვიხილავ** README-სა და leaderboard-ში. **კიდევ ერთ სრულ ვერსიას ავტვირთავ** დარჩენილი 2 მოდელით (LogReg L1, AdaBoost), მაგრამ უკვე **12-ს ცოტათი გადასცდება**.
 
 **გთხოვთ, 12-ის გადაცდენაზე გადავადების 1 დღე არ მომაკლოთ**. თუ სხვა გზა არ არის - გთხოვთ, წინა (ეს) ვერსია შემიფასოთ.

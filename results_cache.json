@@ -29,6 +29,20 @@
     "val_pr_auc": null,
     "val_roc_auc": 0.9308
   },
+  "LogisticRegression_L2": {
+    "best_params": {
+      "C": 0.1
+    },
+    "best_selector": "variance",
+    "cv_val_pr_auc_mean": 0.455,
+    "cv_val_roc_auc_mean": 0.87,
+    "cv_val_roc_auc_std": 0.0021,
+    "final_run_id": "51c53a7e8ea24cda9c57f587a2f708a1",
+    "n_features_kept": 764,
+    "overfit_gap": 0.002,
+    "val_pr_auc": null,
+    "val_roc_auc": 0.8815
+  },
   "RandomForest": {
     "best_params": {
       "max_depth": null,
