@@ -1,0 +1,50 @@
+{
+  "DecisionTree": {
+    "best_params": {
+      "max_depth": 6
+    },
+    "best_selector": "correlation",
+    "cv_val_pr_auc_mean": 0.3309,
+    "cv_val_roc_auc_mean": 0.7663,
+    "cv_val_roc_auc_std": 0.0032,
+    "final_run_id": "3ffbc4837fcc4b7b9e74efaf0602976c",
+    "n_features_kept": 290,
+    "overfit_gap": -0.0023,
+    "val_pr_auc": null,
+    "val_roc_auc": 0.8032
+  },
+  "GradientBoosting": {
+    "best_params": {
+      "learning_rate": 0.05,
+      "max_depth": 8,
+      "max_iter": 500
+    },
+    "best_selector": "correlation",
+    "cv_val_pr_auc_mean": 0.6504,
+    "cv_val_roc_auc_mean": 0.9237,
+    "cv_val_roc_auc_std": 0.0046,
+    "final_run_id": "e4821c7e0a5a4868895c75fe13db6eea",
+    "n_features_kept": 290,
+    "overfit_gap": 0.0445,
+    "val_pr_auc": null,
+    "val_roc_auc": 0.9308
+  },
+  "XGBoost": {
+    "best_params": {
+      "colsample_bytree": 0.6,
+      "learning_rate": 0.03,
+      "max_depth": 10,
+      "n_estimators": 800,
+      "subsample": 0.7
+    },
+    "best_selector": "correlation",
+    "cv_val_pr_auc_mean": 0.6968,
+    "cv_val_roc_auc_mean": 0.9354,
+    "cv_val_roc_auc_std": 0.004,
+    "final_run_id": "449c3dfffe6a46228a31a5159637b000",
+    "n_features_kept": 290,
+    "overfit_gap": 0.0513,
+    "val_pr_auc": null,
+    "val_roc_auc": 0.9475
+  }
+}
