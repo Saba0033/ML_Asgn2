@@ -14,7 +14,9 @@ DagsHub MLflow: https://dagshub.com/Saba0033/ML_Asgn2.mlflow
 
 ## ჩემი მიდგომა
 
-თითოეული მოდელის არქიტექტურისთვის შევქმენი ცალკე notebook და ცალკე MLflow ექსპერიმენტი. თითოეულ notebook-ში ვამოწმებ რამდენიმე imputation სტრატეგიას, სამ feature selection მიდგომას და hyperparameter-ების გრიდს, რომელიც განზრახ მოიცავს underfit, well-fit და overfit კონფიგურაციებს. საუკეთესო კონფიგურაციას ვამოწმებ 3-fold cross-validation-ით და შემდეგ ვინახავ Pipeline-ად MLflow-ში. ყველა არქიტექტურიდან საუკეთესოს ვარეგისტრირებ Model Registry-ში სახელით `IEEEFraudBestModel`. inference notebook პირდაპირ ჩატვირთავს registry-დან და რან-ავს raw test-ზე.
+თითოეული მოდელის არქიტექტურისთვის შევქმენი ცალკე notebook და ცალკე MLflow ექსპერიმენტი. თითოეულ notebook-ში ვამოწმებ რამდენიმე imputation სტრატეგიას, სამ feature selection მიდგომას და hyperparameter-ების გრიდს, რომელიც განზრახ მოიცავს underfit, well-fit და overfit კონფიგურაციებს. საუკეთესო კონფიგურაციას ვამოწმებ 3-fold cross-validation-ით და შემდეგ ვინახავ Pipeline-ად MLflow-ში.
+
+ყოველი notebook-ის ბოლო ნაბიჯი არის `register_if_better(...)` — ის ადარებს ამ run-ის CV ROC-AUC-ს registry-ში არსებულ `IEEEFraudBestModel`-ის უახლეს ვერსიას და მხოლოდ მაშინ ანაცვლებს, თუ შედეგი უკეთესია. ამის შედეგად ყველა notebook დამოუკიდებელია — შეიძლება ნებისმიერი თანმიმდევრობით გავუშვათ — მაგრამ registry ყოველთვის ინახავს მხოლოდ საუკეთესო ვერსიას. `model_inference.ipynb` პირდაპირ ჩატვირთავს `models:/IEEEFraudBestModel/latest`-ს და რან-ავს raw test-ზე.
 
 ჯამში გავტესტე 7 არქიტექტურა: Logistic Regression (L1), Logistic Regression (L2), Decision Tree, Random Forest, AdaBoost, Gradient Boosting (sklearn HistGB), XGBoost.
 
@@ -192,15 +194,9 @@ selection_score = val_roc_auc - 0.5 * max(0, overfit_gap - 0.02)
 
 ### შედარების ცხრილი
 
-შედარება ხილულია DagsHub MLflow UI-ში, კონკრეტულად `IEEEFraudBestModel` registry-ში — ვერსიების ისტორია ცხადად გვიჩვენებს რომელი არქიტექტურა ცვლიდა წინამორბედს. შედეგების სწრაფი ცხრილისთვის შეიძლება მარტივი snippet-ი:
+`model_inference.ipynb`-ის ბოლო section-ი (`## 5. Architecture comparison`) კითხულობს `results_cache.json`-ს და ბეჭდავს leaderboard-ს, დახარისხებულს CV ROC-AUC-ით. ამავე უჯრედში registry-დან ჩამოვტვირთავთ `IEEEFraudBestModel`-ის უახლესი ვერსიის run-ს და ვადასტურებთ რომელი არქიტექტურაა მოქმედი ჩემპიონი.
 
-```python
-import json
-data = json.loads(open('results_cache.json').read())
-for arch in sorted(data, key=lambda a: data[a]['cv_val_roc_auc_mean'], reverse=True):
-    d = data[arch]
-    print(f"{arch:25s}  CV={d['cv_val_roc_auc_mean']:.4f}  gap={d['overfit_gap']:+.4f}")
-```
+DagsHub MLflow UI-ში იგივე შედარება ხილულია experiments-ის ჯვარედინი ხედვით, ხოლო registry-ის ვერსიების ისტორია გვიჩვენებს რომელი არქიტექტურა ცვლიდა წინამორბედს.
 
 ## MLflow Tracking
 
