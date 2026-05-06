@@ -25,7 +25,6 @@ ML_Asgn2/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── _render_results_table.py                        — ცხრილი results_cache.json-დან
 ├── results_cache.json                              — per-notebook cached metrics
 │
 ├── 00_eda.ipynb                                    — EDA + plots/-ში გრაფიკები
@@ -189,22 +188,18 @@ selection_score = val_roc_auc - 0.5 * max(0, overfit_gap - 0.02)
 - refit `pd.concat([X_train, X_val])`-ზე — val-ი HP-tuning-ში უკვე გამოვიყენე, deployed model-ი მაქსიმალური მონაცემიდან იღებს ცოდნას.
 - `mlflow.sklearn.log_model(name='pipeline', signature=infer_signature(...), input_example=...)` — ხელახალი ჩატვირთვა მუშაობს raw DataFrame-ზე.
 - `cache_architecture_result(...)` ანახლებს `results_cache.json`-ს.
-- `if REGISTER_AS_BEST: mlflow.register_model(...)` — registry-ში მხოლოდ ერთი notebook-ის flag უნდა იყოს `True`.
+- `register_if_better(final_run_id, cv_summary['cv_val_roc_auc_mean'])` — ადარებს ამ run-ს registry-ში არსებულ `IEEEFraudBestModel`-ს და მხოლოდ მაშინ ანაცვლებს, თუ უკეთესი CV ROC-AUC აქვს. ანუ ვინც ბოლო რანის შედეგად გაიმარჯვა, ის რჩება registry-ში.
 
 ### შედარების ცხრილი
 
-ცხრილი ავტომატურად რენდერდება `python _render_results_table.py`-ით:
+შედარება ხილულია DagsHub MLflow UI-ში, კონკრეტულად `IEEEFraudBestModel` registry-ში — ვერსიების ისტორია ცხადად გვიჩვენებს რომელი არქიტექტურა ცვლიდა წინამორბედს. შედეგების სწრაფი ცხრილისთვის შეიძლება მარტივი snippet-ი:
 
-```
-| Architecture | val ROC-AUC | overfit gap | CV ROC-AUC | CV PR-AUC | best selector | features kept |
-|---|---|---|---|---|---|---|
-| XGBoost          | (filled in after run) |
-| GradientBoosting | ... |
-| RandomForest     | ... |
-| AdaBoost         | ... |
-| DecisionTree     | ... |
-| LogReg L1        | ... |
-| LogReg L2        | ... |
+```python
+import json
+data = json.loads(open('results_cache.json').read())
+for arch in sorted(data, key=lambda a: data[a]['cv_val_roc_auc_mean'], reverse=True):
+    d = data[arch]
+    print(f"{arch:25s}  CV={d['cv_val_roc_auc_mean']:.4f}  gap={d['overfit_gap']:+.4f}")
 ```
 
 ## MLflow Tracking
@@ -271,15 +266,12 @@ cd data && unzip -o ieee-fraud-detection.zip && cd ..
 jupyter notebook 00_eda.ipynb
 
 # 4. ცალ-ცალკე ყოველი მოდელის notebook
+# (თითოეული თვითონ ლოგავს MLflow-ში და ავტომატურად რეგისტრირდება IEEEFraudBestModel-ად
+# თუ მისი CV ROC-AUC უკეთესია, ვიდრე registry-ში არსებული ვერსიის)
 jupyter notebook model_experiment_XGBoost.ipynb
 # ... და დანარჩენი 6
 
-# 5. შედარების ცხრილი
-python _render_results_table.py
-
-# 6. გამარჯვებული notebook-ში REGISTER_AS_BEST = True, ხელახლა გაუშვი §8
-
-# 7. inference + Kaggle submission
+# 5. inference + Kaggle submission
 jupyter notebook model_inference.ipynb
 kaggle competitions submit -c ieee-fraud-detection -f submissions/submission.csv -m "from registry"
 ```
