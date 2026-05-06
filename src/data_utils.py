@@ -9,7 +9,10 @@ import numpy as np
 import pandas as pd
 
 
-KAGGLE_INPUT = Path("/kaggle/input/ieee-fraud-detection")
+KAGGLE_INPUT_CANDIDATES = [
+    Path("/kaggle/input/ieee-fraud-detection"),
+    Path("/kaggle/input/competitions/ieee-fraud-detection"),
+]
 LOCAL_INPUT_CANDIDATES = [
     Path("data"),
     Path("../data"),
@@ -18,9 +21,7 @@ LOCAL_INPUT_CANDIDATES = [
 
 
 def find_data_dir() -> Path:
-    if KAGGLE_INPUT.exists():
-        return KAGGLE_INPUT
-    for candidate in LOCAL_INPUT_CANDIDATES:
+    for candidate in KAGGLE_INPUT_CANDIDATES + LOCAL_INPUT_CANDIDATES:
         if (candidate / "train_transaction.csv").exists():
             return candidate
     raise FileNotFoundError(
