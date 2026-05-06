@@ -89,3 +89,32 @@ def load_architecture_results() -> dict:
         return json.loads(RESULTS_CACHE.read_text())
     except json.JSONDecodeError:
         return {}
+
+
+REGISTERED_MODEL = "IEEEFraudBestModel"
+
+
+def register_if_better(run_id: str, cv_val_roc_auc: float,
+                       metric_name: str = "cv_val_roc_auc_mean") -> bool:
+    """Register run as the champion only if it beats the current registry version.
+
+    Returns True if the model was registered, False if it was skipped.
+    """
+    client = mlflow.MlflowClient()
+    try:
+        versions = client.search_model_versions(f"name='{REGISTERED_MODEL}'")
+    except Exception:
+        versions = []
+
+    if versions:
+        latest = max(versions, key=lambda v: int(v.version))
+        existing = client.get_run(latest.run_id).data.metrics.get(metric_name)
+        if existing is not None:
+            print(f"  registry champion: v{latest.version}  {metric_name}={existing:.4f}")
+            if cv_val_roc_auc <= existing:
+                print(f"  this run: {cv_val_roc_auc:.4f}  -- not better, skipping")
+                return False
+
+    mv = mlflow.register_model(model_uri=f"runs:/{run_id}/pipeline", name=REGISTERED_MODEL)
+    print(f"  PROMOTED to v{mv.version}  {metric_name}={cv_val_roc_auc:.4f}")
+    return True
