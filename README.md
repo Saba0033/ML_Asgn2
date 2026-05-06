@@ -11,6 +11,7 @@
 
 GitHub: https://github.com/Saba0033/ML_Asgn2
 DagsHub MLflow: https://dagshub.com/Saba0033/ML_Asgn2.mlflow
+Best model (registry): https://dagshub.com/Saba0033/ML_Asgn2.mlflow/#/models/IEEEFraudBestModel
 
 ## ჩემი მიდგომა
 
@@ -378,10 +379,10 @@ kaggle competitions submit -c ieee-fraud-detection -f submissions/submission.csv
 
 ---
 
-## !! შენიშვნა შემფასებლისთვის
+## !! შენიშვნა სექციის ლიდერისთვის
 
 **მხოლოდ 4 არქიტექტურამ მოასწრო სრული პაიპლაინი ამ ვერსიაში** (XGBoost, Gradient Boosting, Random Forest, Decision Tree), და დროის სიმცირის გამო (Kaggle-ის kernel-ები ხანგრძლივად გადიოდა — ცალკეული LogReg-ი/AdaBoost run 30+ წუთს იჭერდა cleaning-სა და hyperparameter tuning-ში) ვერ ვაცდი ვადას რომ ყველა 7 არქიტექტურა ერთ submission-ში მოხვედრილიყო.
 
 ამ ვერსიაში მხოლოდ ამ **4 არქიტექტურას ვიხილავ** README-სა და leaderboard-ში. **კიდევ ერთ სრულ ვერსიას ავტვირთავ** დარჩენილი 3 მოდელით (LogReg L1, LogReg L2, AdaBoost), მაგრამ უკვე **12-ს ცოტათი გადასცდება**.
 
-**გთხოვთ, 12-ის გადაცდენაზე გადავადების 1 დღე არ მომაკლოთ** — სრულყოფილი submission-ი დამზადდება უმოკლეს დროში. **თუ სხვა გზა არ არის — გთხოვთ, წინა (ეს) ვერსია შემიფასოთ**, რადგან ყველა მოთხოვნა (separate experiments, named runs, overfit/underfit ანალიზი, EDA, Feature Engineering, Feature Selection, MLflow Registry) უკვე ნაჩვენებია 4 არქიტექტურაზე და დარჩენილი 3 ანალოგიური სქემითაა აწყობილი (იხილეთ `model_experiment_LogisticRegression*.ipynb`, `model_experiment_AdaBoost.ipynb`).
+**გთხოვთ, 12-ის გადაცდენაზე გადავადების 1 დღე არ მომაკლოთ**. თუ სხვა გზა არ არის - გთხოვთ, წინა (ეს) ვერსია შემიფასოთ.

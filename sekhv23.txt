@@ -1,2 +1,0 @@
-https://github.com/Saba0033/ML_Asgn2
-https://dagshub.com/Saba0033/ML_Asgn2.mlflow
