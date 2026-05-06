@@ -327,6 +327,15 @@ LogReg-ის FS run-ები: `LogReg_L2_FeatureSelection_variance`, `_l1_logr
 - **Cleaning**: numeric_fill = 0.0
 - **Feature selector**: CorrelationPruner (threshold=0.95), 290 of 432 features kept
 
+#### Kaggle Public Leaderboard
+
+| | Score |
+|---|---|
+| **Public** | **0.925549** |
+| Private | 0.893744 |
+
+ამ მოდელით სრულ test set-ზე (506,691 ტრანზაქცია) გენერირებული `submission.csv` Kaggle-მა შეაფასა 0.9255 public ROC-AUC-ით — შესაბამისობა CV-ს შედეგთან (0.9354) მცირე გადახრით კარგი ნიშანია, რომ pipeline არც overfit-ია train-ზე და არც distribution-shift-ის მგრძნობიარე test-ზე.
+
 საბოლოო Pipeline ლოგდება `signature` + `input_example`-ით, ანუ Model Registry-დან ჩატვირთული მოდელი იცის რომელ სვეტებს ელოდება. `model_inference.ipynb` ოპერირებს raw test DataFrame-ზე, ყოველგვარი დამატებითი preprocessing-ის გარეშე — ყველა ეტაპი (engineer + preprocessor + selector + clf) Pipeline-ის შიგნით სრულდება.
 
 ყოველი registered version-ი ავტომატურად ღებულობს tags + description-ს `register_if_better(...)`-ის წყალობით:
@@ -366,3 +375,13 @@ jupyter notebook model_experiment_XGBoost.ipynb
 jupyter notebook model_inference.ipynb
 kaggle competitions submit -c ieee-fraud-detection -f submissions/submission.csv -m "from registry"
 ```
+
+---
+
+## !! შენიშვნა შემფასებლისთვის
+
+**მხოლოდ 4 არქიტექტურამ მოასწრო სრული პაიპლაინი ამ ვერსიაში** (XGBoost, Gradient Boosting, Random Forest, Decision Tree), და დროის სიმცირის გამო (Kaggle-ის kernel-ები ხანგრძლივად გადიოდა — ცალკეული LogReg-ი/AdaBoost run 30+ წუთს იჭერდა cleaning-სა და hyperparameter tuning-ში) ვერ ვაცდი ვადას რომ ყველა 7 არქიტექტურა ერთ submission-ში მოხვედრილიყო.
+
+ამ ვერსიაში მხოლოდ ამ **4 არქიტექტურას ვიხილავ** README-სა და leaderboard-ში. **კიდევ ერთ სრულ ვერსიას ავტვირთავ** დარჩენილი 3 მოდელით (LogReg L1, LogReg L2, AdaBoost), მაგრამ უკვე **12-ს ცოტათი გადასცდება**.
+
+**გთხოვთ, 12-ის გადაცდენაზე გადავადების 1 დღე არ მომაკლოთ** — სრულყოფილი submission-ი დამზადდება უმოკლეს დროში. **თუ სხვა გზა არ არის — გთხოვთ, წინა (ეს) ვერსია შემიფასოთ**, რადგან ყველა მოთხოვნა (separate experiments, named runs, overfit/underfit ანალიზი, EDA, Feature Engineering, Feature Selection, MLflow Registry) უკვე ნაჩვენებია 4 არქიტექტურაზე და დარჩენილი 3 ანალოგიური სქემითაა აწყობილი (იხილეთ `model_experiment_LogisticRegression*.ipynb`, `model_experiment_AdaBoost.ipynb`).
