@@ -95,10 +95,16 @@ REGISTERED_MODEL = "IEEEFraudBestModel"
 
 
 def register_if_better(run_id: str, cv_val_roc_auc: float,
+                       model_uri: str | None = None,
                        metric_name: str = "cv_val_roc_auc_mean") -> bool:
     """Register run as the champion only if it beats the current registry version.
 
     Returns True if the model was registered, False if it was skipped.
+
+    `model_uri` should be ModelInfo.model_uri returned by `log_model`. Required on
+    MLflow 3.x where models live as separate logged_model entities and the legacy
+    `runs:/<run_id>/<artifact_path>` reference no longer resolves. If omitted, we
+    look for a `pipeline_uri` tag on the run, then fall back to the legacy URI.
     """
     client = mlflow.MlflowClient()
     try:
@@ -115,7 +121,18 @@ def register_if_better(run_id: str, cv_val_roc_auc: float,
                 print(f"  this run: {cv_val_roc_auc:.4f}  -- not better, skipping")
                 return False
 
-    mv = mlflow.register_model(model_uri=f"runs:/{run_id}/pipeline", name=REGISTERED_MODEL)
+    if model_uri is None:
+        try:
+            uri_from_tag = client.get_run(run_id).data.tags.get('pipeline_uri')
+            if uri_from_tag:
+                model_uri = uri_from_tag
+        except Exception:
+            pass
+    if model_uri is None:
+        model_uri = f"runs:/{run_id}/pipeline"
+
+    print(f"  registering from: {model_uri}")
+    mv = mlflow.register_model(model_uri=model_uri, name=REGISTERED_MODEL)
     print(f"  PROMOTED to v{mv.version}  {metric_name}={cv_val_roc_auc:.4f}")
     return True
 
