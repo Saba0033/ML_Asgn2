@@ -94,12 +94,61 @@ def load_architecture_results() -> dict:
 REGISTERED_MODEL = "IEEEFraudBestModel"
 
 
+def _derive_architecture(run) -> str:
+    """Pull architecture name from the run name '<arch>_FinalPipeline'."""
+    name = run.data.tags.get('mlflow.runName', '') if run else ''
+    if name.endswith('_FinalPipeline'):
+        return name[: -len('_FinalPipeline')]
+    return name or 'unknown'
+
+
+def _annotate_version(client, version: str, run, architecture: str) -> None:
+    """Tag and describe a registered model version from its source run."""
+    metrics = run.data.metrics
+    params = run.data.params
+
+    def _fmt(metric_key: str, fmt: str = ".4f") -> str:
+        v = metrics.get(metric_key)
+        return f"{v:{fmt}}" if v is not None else "N/A"
+
+    tags_to_set = {
+        "architecture":         architecture,
+        "cv_val_roc_auc_mean":  _fmt("cv_val_roc_auc_mean"),
+        "cv_val_roc_auc_std":   _fmt("cv_val_roc_auc_std"),
+        "cv_val_pr_auc_mean":   _fmt("cv_val_pr_auc_mean"),
+        "cv_overfit_gap":       _fmt("cv_overfit_gap"),
+        "final_val_roc_auc":    _fmt("final_val_roc_auc"),
+    }
+    for k, v in tags_to_set.items():
+        try:
+            client.set_model_version_tag(REGISTERED_MODEL, version, k, v)
+        except Exception:
+            pass
+
+    hp_str = ", ".join(f"{k}={v}" for k, v in sorted(params.items())) or "N/A"
+    description = (
+        f"Architecture: {architecture}\n"
+        f"Best HP: {hp_str}\n"
+        f"CV ROC-AUC: {_fmt('cv_val_roc_auc_mean')} +/- {_fmt('cv_val_roc_auc_std')}\n"
+        f"CV PR-AUC:  {_fmt('cv_val_pr_auc_mean')}\n"
+        f"CV overfit gap: {_fmt('cv_overfit_gap')}\n"
+        f"Final val ROC-AUC: {_fmt('final_val_roc_auc')}\n"
+        f"Source run: {run.info.run_id}"
+    )
+    try:
+        client.update_model_version(REGISTERED_MODEL, version, description=description)
+    except Exception:
+        pass
+
+
 def register_if_better(run_id: str, cv_val_roc_auc: float,
                        model_uri: str | None = None,
+                       architecture: str | None = None,
                        metric_name: str = "cv_val_roc_auc_mean") -> bool:
     """Register run as the champion only if it beats the current registry version.
 
-    Returns True if the model was registered, False if it was skipped.
+    On promotion, also writes architecture/cv-score tags and a short description
+    to the new version so the registry page is human-readable.
 
     `model_uri` should be ModelInfo.model_uri returned by `log_model`. Required on
     MLflow 3.x where models live as separate logged_model entities and the legacy
@@ -121,20 +170,41 @@ def register_if_better(run_id: str, cv_val_roc_auc: float,
                 print(f"  this run: {cv_val_roc_auc:.4f}  -- not better, skipping")
                 return False
 
-    if model_uri is None:
-        try:
-            uri_from_tag = client.get_run(run_id).data.tags.get('pipeline_uri')
-            if uri_from_tag:
-                model_uri = uri_from_tag
-        except Exception:
-            pass
+    run = None
+    try:
+        run = client.get_run(run_id)
+    except Exception:
+        pass
+
+    if model_uri is None and run is not None:
+        uri_from_tag = run.data.tags.get('pipeline_uri')
+        if uri_from_tag:
+            model_uri = uri_from_tag
     if model_uri is None:
         model_uri = f"runs:/{run_id}/pipeline"
 
     print(f"  registering from: {model_uri}")
     mv = mlflow.register_model(model_uri=model_uri, name=REGISTERED_MODEL)
-    print(f"  PROMOTED to v{mv.version}  {metric_name}={cv_val_roc_auc:.4f}")
+
+    if run is not None:
+        if architecture is None:
+            architecture = _derive_architecture(run)
+        _annotate_version(client, mv.version, run, architecture)
+
+    print(f"  PROMOTED to v{mv.version}  ({architecture or 'unknown'}, {metric_name}={cv_val_roc_auc:.4f})")
     return True
+
+
+def annotate_existing_version(version: str | int) -> None:
+    """Backfill tags + description on a previously-registered version that was
+    created without them (e.g. registered before this enhancement landed).
+    """
+    client = mlflow.MlflowClient()
+    mv = client.get_model_version(REGISTERED_MODEL, str(version))
+    run = client.get_run(mv.run_id)
+    architecture = _derive_architecture(run)
+    _annotate_version(client, mv.version, run, architecture)
+    print(f"  annotated v{mv.version}  ({architecture})")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
