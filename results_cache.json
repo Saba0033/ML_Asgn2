@@ -29,6 +29,22 @@
     "val_pr_auc": null,
     "val_roc_auc": 0.9308
   },
+  "RandomForest": {
+    "best_params": {
+      "max_depth": null,
+      "min_samples_leaf": 20,
+      "n_estimators": 200
+    },
+    "best_selector": "correlation",
+    "cv_val_pr_auc_mean": 0.5063,
+    "cv_val_roc_auc_mean": 0.8959,
+    "cv_val_roc_auc_std": 0.0044,
+    "final_run_id": "99579a6b8aab49dbaa68c9caad6ce93d",
+    "n_features_kept": 290,
+    "overfit_gap": 0.0572,
+    "val_pr_auc": null,
+    "val_roc_auc": 0.9094
+  },
   "XGBoost": {
     "best_params": {
       "colsample_bytree": 0.6,
